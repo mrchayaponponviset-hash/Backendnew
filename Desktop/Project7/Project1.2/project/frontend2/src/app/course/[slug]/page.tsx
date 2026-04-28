@@ -6,10 +6,14 @@ import Link from "next/link";
 import courses_data from "@/data/courses.json";
 import { apiService } from "@/services/api";
 import { InlineAIChat } from "@/components/InlineAIChat";
+import { FlashcardsTab } from "@/components/FlashcardsTab";
+import { QuizTab } from "@/components/QuizTab";
+import { FlashcardsLoading } from "@/components/FlashcardsLoading";
+import { FlashcardsPlayer } from "@/components/FlashcardsPlayer";
+import { QuizPlayer } from "@/components/QuizPlayer";
+import { ExamTab } from "@/components/ExamTab";
+import { ExamPlayer } from "@/components/ExamPlayer";
 import { useAuth } from "@/contexts/AuthContext";
-import QuizView from "@/components/QuizView";
-import FlashcardView from "@/components/FlashcardView";
-import ExamView from "@/components/ExamView";
 
 const tabs = ["Content", "Flashcards", "Quiz", "Exam"];
 
@@ -20,12 +24,10 @@ export default function CoursePage() {
 
   // Find course and its year courses
   let course: any = null;
-  let yearCourses: any[] = [];
   courses_data.years.forEach((y) => {
     const found = y.courses.find((c) => c.slug === slug);
     if (found) {
       course = found;
-      yearCourses = y.courses;
     }
   });
 
@@ -34,11 +36,35 @@ export default function CoursePage() {
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [isChatVisibleOnMobile, setIsChatVisibleOnMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [selected_topics, set_selected_topics] = useState<string[]>([]);
   
   const { user } = useAuth();
   const [lessons, setLessons] = useState<any[]>([]);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
   const [loadingLessons, setLoadingLessons] = useState(true);
+
+  // Flashcards States
+  const [is_generating_flashcards, set_is_generating_flashcards] = useState(false);
+  const [is_viewing_flashcards, set_is_viewing_flashcards] = useState(false);
+  const [flashcards, set_flashcards] = useState<{question: string, answer: string}[]>([]);
+
+  // Quiz States
+  const [is_generating_quiz, set_is_generating_quiz] = useState(false);
+  const [is_viewing_quiz, set_is_viewing_quiz] = useState(false);
+  const [quiz_questions, set_quiz_questions] = useState<{
+    question: string, 
+    options: string[], 
+    correct_answer: number
+  }[]>([]);
+
+  // Exam States
+  const [is_generating_exam, set_is_generating_exam] = useState(false);
+  const [is_viewing_exam, set_is_viewing_exam] = useState(false);
+  const [exam_questions, set_exam_questions] = useState<any[]>([]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     async function loadLessons() {
@@ -70,10 +96,6 @@ export default function CoursePage() {
   }, [user]);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (!course && typeof window !== "undefined") {
       router.push("/");
     }
@@ -87,6 +109,12 @@ export default function CoursePage() {
     setActiveAccordion(activeAccordion === idx ? null : idx);
   };
 
+  const HandleToggleTopic = (topic: string) => {
+    set_selected_topics(prev => 
+      prev.includes(topic) ? [] : [topic]
+    );
+  };
+
   const handleCompleteLesson = async (lessonId: string) => {
     if (!user) {
       alert("กรุณาเข้าสู่ระบบก่อนบันทึกความก้าวหน้า");
@@ -97,6 +125,79 @@ export default function CoursePage() {
       setCompletedLessonIds([...completedLessonIds, lessonId]);
     } catch (err) {
       console.error("Failed to complete lesson:", err);
+    }
+  };
+
+  const HandleGenerateFlashcards = async () => {
+    if (selected_topics.length === 0) return;
+    
+    set_is_generating_flashcards(true);
+    
+    try {
+      // Send the first selected topic to the backend
+      const data = await apiService.generateFlashcards(selected_topics[0]);
+      
+      // Map API response to match the FlashcardsPlayer expected format
+      const mappedCards = data.cards.map((c: any) => ({
+        question: c.front,
+        answer: c.back
+      }));
+      
+      set_flashcards(mappedCards);
+      set_is_viewing_flashcards(true);
+    } catch (error) {
+      console.error("Failed to generate flashcards:", error);
+      alert("เกิดข้อผิดพลาดในการสร้าง Flashcards");
+    } finally {
+      set_is_generating_flashcards(false);
+    }
+  };
+
+  const HandleGenerateQuiz = async () => {
+    if (selected_topics.length === 0) return;
+
+    set_is_generating_quiz(true);
+
+    try {
+      const data = await apiService.generateQuiz(selected_topics[0]);
+      
+      // Map API response to match the QuizPlayer expected format
+      const mappedQuestions = data.questions.map((q: any) => ({
+        question: q.question,
+        options: q.options,
+        correct_answer: q.correctIndex
+      }));
+      
+      set_quiz_questions(mappedQuestions);
+      set_is_viewing_quiz(true);
+    } catch (error) {
+      console.error("Failed to generate quiz:", error);
+      alert("เกิดข้อผิดพลาดในการสร้างข้อสอบ");
+    } finally {
+      set_is_generating_quiz(false);
+    }
+  };
+
+  const HandleGenerateExam = async () => {
+    set_is_generating_exam(true);
+    try {
+      const data = await apiService.generateExam(course.topics);
+      
+      const mappedQuestions = data.questions.map((q: any) => ({
+        question: q.question,
+        options: q.options,
+        correct_answer: q.correctIndex,
+        domain: q.domain,
+        chapterTitle: q.chapterTitle
+      }));
+      
+      set_exam_questions(mappedQuestions);
+      set_is_viewing_exam(true);
+    } catch (error) {
+      console.error("Failed to generate exam:", error);
+      alert("เกิดข้อผิดพลาดในการสร้างข้อสอบจำลอง");
+    } finally {
+      set_is_generating_exam(false);
     }
   };
 
@@ -133,16 +234,24 @@ export default function CoursePage() {
           </div>
         </div>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 relative overflow-hidden pr-1 md:pr-3">
-          {/* 🛡️ THE COVER TRICK */}
-          <div className="absolute top-0 right-0 w-4 md:w-8 h-8 md:h-12 bg-white z-50 pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-4 md:w-8 h-8 md:h-12 bg-white z-50 pointer-events-none" />
+        <div className="flex-1 relative overflow-hidden p-2 md:p-4">
+          {/* 🛡️ THE COVER TRICK (Hiding Scrollbar Arrows) */}
+          {activeTab === "Content" && (
+            <>
+              <div className="absolute top-0 right-0 w-8 h-6 bg-white z-[60] pointer-events-none" />
+              <div className="absolute bottom-0 right-0 w-8 h-6 bg-white z-[60] pointer-events-none" />
+            </>
+          )}
 
-          <div className="h-full overflow-y-auto custom-scrollbar px-6 md:px-8 lg:px-14 pb-14 pt-4 md:pt-6">
-            <div className="animate-fade-in-up">
+          <div className={`h-full ${
+            activeTab === "Content"
+              ? "overflow-y-auto premium-scrollbar"
+              : "overflow-hidden no-scrollbar flex flex-col"
+          } relative z-0`}>
+            {/* 📋 Wrapper สำหรับจัดกึ่งกลางเนื้อหาภายใน Tab */}
+            <div className="h-full flex flex-col">
               {activeTab === "Content" && (
-                <div className="flex flex-col gap-3 md:gap-4">
+                <div className="flex flex-col gap-3 md:gap-4 px-6 md:px-8 lg:px-12 pt-4 md:pt-6 pb-14">
                   {course.topics.map((topic: string, idx: number) => {
                     const isOpen = activeAccordion === idx;
                     const matchingLesson = lessons.find(l => l.title === topic);
@@ -173,59 +282,126 @@ export default function CoursePage() {
                         <div className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] bg-white ${isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
                           }`}>
                           <div className="px-4 md:px-6 pb-6 md:pb-8 pt-1 md:pt-2">
-                              {matchingLesson ? (
-                                <div className="text-[13.5px] md:text-[14.5px] text-[var(--color-gray-600)] leading-[1.8] mb-6 whitespace-pre-wrap">
-                                  {matchingLesson.content}
-                                </div>
-                              ) : (
-                                <div className="text-[13px] md:text-[14px] text-gray-400 italic mb-6">
-                                  ยังไม่มีเนื้อหาสำหรับบทเรียนนี้
-                                </div>
-                              )}
-                              
+                            {matchingLesson ? (
+                              <div className="text-[13.5px] md:text-[14.5px] text-[var(--color-gray-600)] leading-[1.8] mb-6 whitespace-pre-wrap">
+                                {matchingLesson.content}
+                              </div>
+                            ) : (
+                              <div className="text-[13px] md:text-[14px] text-gray-400 italic mb-6">
+                                ยังไม่มีเนื้อหาสำหรับบทเรียนนี้
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center gap-3 md:gap-4 justify-between mt-4 border-t border-[var(--color-gray-100)] pt-4">
                               <button
                                 onClick={(e) => { 
                                   e.stopPropagation(); 
                                   if (matchingLesson) handleCompleteLesson(matchingLesson.id);
-                                  else alert("ไม่พบข้อมูลบทเรียนในระบบ Supabase");
+                                  else alert("ไม่พบข้อมูลบทเรียนในระบบ");
                                 }}
-                                disabled={isCompleted}
-                                className={`px-6 md:px-8 py-2 md:py-2.5 rounded-full font-black text-[12px] md:text-[13px] transition-all shadow-md ${
+                                disabled={isCompleted || !matchingLesson}
+                                className={`px-6 md:px-8 py-2 md:py-2.5 rounded-full font-black text-[12px] md:text-[13px] transition-all shadow-sm ${
                                   isCompleted
                                     ? "bg-[var(--color-gray-200)] text-[var(--color-gray-500)] cursor-not-allowed shadow-none"
-                                    : "bg-green-500 border-green-500 text-white hover:bg-green-600"
+                                    : "bg-[var(--color-primary)] border-[var(--color-primary)] text-white hover:brightness-110"
                                 }`}
                               >
                                 {isCompleted ? "✓ เรียนจบแล้ว" : "Mark as Complete"}
                               </button>
+                              
+                              <div className="flex items-center gap-2">
+                                <button
+                                  disabled={idx === 0}
+                                  onClick={(e) => { e.stopPropagation(); setActiveAccordion(idx - 1); }}
+                                  className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full border text-[12px] md:text-[13px] font-bold transition-all ${idx === 0 
+                                    ? 'bg-[var(--color-gray-50)] border-[var(--color-gray-100)] text-[var(--color-gray-300)] cursor-not-allowed' 
+                                    : 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white hover:brightness-95'}`}
+                                >
+                                  Previous
+                                </button>
+                                <button
+                                  disabled={idx === course.topics.length - 1}
+                                  onClick={(e) => { e.stopPropagation(); setActiveAccordion(idx + 1); }}
+                                  className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full border text-[12px] md:text-[13px] font-bold transition-all ${idx === course.topics.length - 1 
+                                    ? 'bg-[var(--color-gray-50)] border-[var(--color-gray-100)] text-[var(--color-gray-300)] cursor-not-allowed' 
+                                    : 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white hover:brightness-95'}`}
+                                >
+                                  Next
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      );
+                      </div>
+                    );
                   })}
                 </div>
               )}
 
+              {/* Flashcards Content */}
               {activeTab === "Flashcards" && (
-                <FlashcardView 
-                  userId={user?.uid} 
-                  lessons={lessons.filter(l => completedLessonIds.includes(l.id))} 
-                />
+                <>
+                  {is_generating_flashcards ? (
+                    <FlashcardsLoading />
+                  ) : is_viewing_flashcards ? (
+                    <FlashcardsPlayer 
+                      flashcards={flashcards} 
+                      OnClose={() => set_is_viewing_flashcards(false)} 
+                    />
+                  ) : (
+                    <FlashcardsTab 
+                      topics={course.topics}
+                      selected_topics={selected_topics}
+                      OnToggle={HandleToggleTopic}
+                      OnGenerate={HandleGenerateFlashcards}
+                    />
+                  )}
+                </>
               )}
 
+              {/* Quiz Content */}
               {activeTab === "Quiz" && (
-                <QuizView 
-                  userId={user?.uid} 
-                  lessons={lessons.filter(l => completedLessonIds.includes(l.id))} 
-                />
+                <>
+                  {is_generating_quiz ? (
+                    <FlashcardsLoading title="Generating Quiz" />
+                  ) : is_viewing_quiz ? (
+                    <QuizPlayer 
+                      questions={quiz_questions} 
+                      OnClose={() => set_is_viewing_quiz(false)} 
+                      userId={user?.uid}
+                      lessonId={lessons.find(l => l.title === selected_topics[0])?.id}
+                    />
+                  ) : (
+                    <QuizTab 
+                      topics={course.topics}
+                      selected_topics={selected_topics}
+                      OnToggle={HandleToggleTopic}
+                      OnGenerate={HandleGenerateQuiz}
+                    />
+                  )}
+                </>
               )}
 
+              {/* Exam Content */}
               {activeTab === "Exam" && (
-                <ExamView 
-                  userId={user?.uid} 
-                  lessons={lessons} 
-                  courseName={course.name_en}
-                />
+                <>
+                  {is_generating_exam ? (
+                    <FlashcardsLoading title="Generating Examination" />
+                  ) : is_viewing_exam ? (
+                    <ExamPlayer 
+                      questions={exam_questions} 
+                      topics={course.topics}
+                      courseName={course.name_en}
+                      userId={user?.uid}
+                      OnClose={() => set_is_viewing_exam(false)} 
+                    />
+                  ) : (
+                    <ExamTab 
+                      course_name={course.name_en}
+                      OnGenerate={HandleGenerateExam}
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -283,7 +459,7 @@ export default function CoursePage() {
           </svg>
         </button>
 
-        <div className="w-full h-full overflow-hidden rounded-[24px] md:rounded-[32px] flex flex-col">
+        <div className="w-full h-full overflow-hidden rounded-[24px] md:rounded-[32px] flex flex-col relative">
           <InlineAIChat
             courseName={course.name_en}
             initialTopic={course.topics_en ? course.topics_en[0] : course.topics[0]}

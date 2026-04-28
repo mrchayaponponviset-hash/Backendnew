@@ -1,7 +1,7 @@
 // API Service for connecting to the LangGraph Backend
 // Fast endpoints use Next.js proxy (/api/...), AI generation endpoints call backend directly to avoid proxy timeout.
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'http://127.0.0.1:5000';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -123,7 +123,7 @@ export const apiService = {
   // 6. Supabase - Get Lessons
   async getLessons() {
     try {
-      const res = await fetch('/api/lessons');
+      const res = await fetch(`${BACKEND_URL}/api/lessons`);
       if (!res.ok) throw new Error('Failed to fetch lessons');
       return await res.json();
     } catch (error) {
@@ -135,7 +135,7 @@ export const apiService = {
   // 7. Supabase - Mark Lesson as Completed
   async completeLesson(userId: string, lessonId: string) {
     try {
-      const res = await fetch('/api/complete-lesson', {
+      const res = await fetch(`${BACKEND_URL}/api/complete-lesson`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, lessonId })
@@ -151,7 +151,7 @@ export const apiService = {
   // 7.5 Supabase - Get User Progress
   async getUserProgress(userId: string) {
     try {
-      const res = await fetch(`/api/user-progress/${userId}`);
+      const res = await fetch(`${BACKEND_URL}/api/user-progress/${userId}`);
       if (!res.ok) throw new Error('Failed to fetch user progress');
       return await res.json(); // returns array of lesson_ids
     } catch (error) {
@@ -163,7 +163,7 @@ export const apiService = {
   // 8. Supabase - Save Score
   async saveScore(data: { userId: string, lessonId: string, type: 'quiz' | 'flashcard', score: number, totalQuestions: number }) {
     try {
-      const res = await fetch('/api/save-score', {
+      const res = await fetch(`${BACKEND_URL}/api/save-score`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -185,7 +185,7 @@ export const apiService = {
     recommendation: string 
   }) {
     try {
-      const res = await fetch('/api/save-exam-result', {
+      const res = await fetch(`${BACKEND_URL}/api/save-exam-result`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)

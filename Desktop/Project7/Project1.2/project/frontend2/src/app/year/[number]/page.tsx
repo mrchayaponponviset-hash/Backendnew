@@ -51,13 +51,13 @@ export default async function YearPage({ params }: YearPageProps) {
   const total_chapters = year_data.courses.reduce((sum, c) => sum + c.chapters, 0);
 
   return (
-    <main className="h-screen w-screen bg-white flex flex-col overflow-hidden">
+    <main className="h-screen w-screen bg-transparent flex flex-col overflow-hidden">
       {/* ===== Auth Navbar (Client Component) ===== */}
       <div className="flex-shrink-0 z-50 relative">
         <AuthNavbar />
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden relative bg-white">
+      <div className="flex-1 flex flex-col overflow-hidden relative bg-transparent">
         {/* ===== Header Area (Fixed) ===== */}
         <div className="w-full px-6 md:px-20 lg:px-40 pt-6 md:pt-12 shrink-0">
           {/* ===== Breadcrumb & Navigation ===== */}
@@ -93,14 +93,13 @@ export default async function YearPage({ params }: YearPageProps) {
           </div>
         </div>
 
-        {/* ===== Course List Area (Scrollable with Masking) ===== */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden p-2 md:p-4">
           {/* 🛡️ THE COVER TRICK: กล่องขาวบังลูกศร Scrollbar */}
-          <div className="absolute top-0 right-0 w-4 md:w-8 h-8 md:h-12 bg-white z-50 pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-4 md:w-8 h-8 md:h-12 bg-white z-50 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-8 h-6 bg-white z-50 pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-8 h-6 bg-white z-50 pointer-events-none" />
 
-          <div className="h-full overflow-y-auto custom-scrollbar px-6 md:px-20 lg:px-40 pb-20">
-            <div className="flex flex-col gap-1">
+          <div className="h-full overflow-y-auto premium-scrollbar px-6 md:px-20 lg:px-40 pb-20 relative z-0">
+            <div className="flex flex-col">
               {year_data.courses.map((course, idx) => {
                 const indexNumber = (idx + 1).toString();
 

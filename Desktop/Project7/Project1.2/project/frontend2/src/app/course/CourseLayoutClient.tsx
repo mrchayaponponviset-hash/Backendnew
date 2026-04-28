@@ -45,7 +45,7 @@ export default function CourseLayoutClient({ children }: { children: React.React
   });
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[var(--color-gray-50)] flex flex-col md:flex-row font-sans no-scrollbar">
+    <div className="h-screen w-screen overflow-hidden bg-transparent flex flex-col md:flex-row font-sans no-scrollbar">
       
       {/* Mobile Header (Only visible on small screens) */}
       <div className="md:hidden flex items-center justify-between px-6 h-16 bg-white border-b border-[var(--color-gray-200)] shrink-0 z-40">

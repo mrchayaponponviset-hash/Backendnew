@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BackgroundAnimation } from "@/components/BackgroundAnimation";
 
 export default function RootLayout({
   children,
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body className="antialiased">
+        <BackgroundAnimation />
         <AuthProvider>
           {children}
         </AuthProvider>

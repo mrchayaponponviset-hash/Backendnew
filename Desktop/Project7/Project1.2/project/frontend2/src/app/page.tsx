@@ -99,7 +99,7 @@ function GeometricShapes() {
 
 export default function HomePage() {
   return (
-    <main className="fixed inset-0 h-screen w-screen overflow-hidden flex flex-col no-scrollbar bg-[var(--color-gray-50)]">
+    <main className="fixed inset-0 h-screen w-screen overflow-hidden flex flex-col no-scrollbar bg-transparent">
       <Navbar />
       <GeometricShapes />
 

@@ -30,16 +30,19 @@ export function CourseRow({ course, indexNumber }: CourseRowProps) {
   return (
     <div
       onClick={handleCourseClick}
-      className="group flex flex-col sm:flex-row sm:items-center justify-between pt-1 pb-4 border-b border-[var(--color-gray-200)] hover:bg-[var(--color-primary)] transition-all duration-200 px-4 -mx-4 rounded-xl cursor-pointer interactive-row"
+      className="group bg-white border border-[var(--color-gray-200)] rounded-2xl p-5 md:p-6 mb-3 
+                 flex flex-col sm:flex-row sm:items-center justify-between 
+                 transition-all duration-300 hover:bg-[var(--color-primary)] hover:border-[var(--color-primary)] hover:shadow-md
+                 cursor-pointer"
     >
       {/* ด้านซ้าย: ลำดับ + รหัส + ชื่อวิชา */}
       <div className="flex items-start gap-4 sm:gap-6 mb-4 sm:mb-0">
-        <span className="text-sm font-mono text-[var(--color-gray-300)] mt-1.5 hidden sm:block group-hover:text-white/40 transition-colors">
+        <span className="text-sm font-mono text-[var(--color-gray-300)] mt-1.5 hidden sm:block group-hover:text-white/50 transition-colors">
           {indexNumber}
         </span>
 
         <div>
-          <div className="text-[11px] font-mono text-[var(--color-gray-400)] tracking-wider mb-1.5 group-hover:text-white/60 transition-colors">
+          <div className="text-[11px] font-mono text-[var(--color-gray-400)] tracking-wider mb-1.5 group-hover:text-white/70 transition-colors">
             {course.code}
           </div>
           <h3 className="text-xl font-normal tracking-tight mb-1 text-[var(--color-black)] group-hover:text-white transition-colors">
@@ -53,7 +56,7 @@ export function CourseRow({ course, indexNumber }: CourseRowProps) {
 
       {/* ด้านขวา: จำนวนบท */}
       <div className="flex items-center gap-6 self-start sm:self-center ml-10 sm:ml-0">
-        <span className="text-xs font-mono text-[var(--color-gray-400)] uppercase tracking-wider group-hover:text-white/60 transition-colors">
+        <span className="text-xs font-mono text-[var(--color-gray-400)] uppercase tracking-wider group-hover:text-white/70 transition-colors">
           {course.chapters} chapters
         </span>
       </div>
